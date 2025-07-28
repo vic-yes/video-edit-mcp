@@ -1,0 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "video-edit-mcp"
+version = "0.1.0"
+description = "A powerful Model Context Protocol server for video editing operations using MoviePy"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Aditya_Barasiya", email = "aditya2755@users.noreply.github.com"},
+]
+keywords = ["mcp", "video", "editing", "moviepy", "ai", "server", "claude", "video-processing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+dependencies = [
+    "mcp>=1.12.2",
+    "moviepy==1.0.3",
+    "yt-dlp>=2023.1.6",
+    "typing-extensions>=4.0.0",
+    "Pillow==9.5.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=22.0",
+    "flake8>=4.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Aditya2755/video-edit-mcp"
+Documentation = "https://github.com/Aditya2755/video-edit-mcp#readme"
+Repository = "https://github.com/Aditya2755/video-edit-mcp.git"
+"Bug Tracker" = "https://github.com/Aditya2755/video-edit-mcp/issues"
+
+[project.scripts]
+video-edit-mcp = "video_edit_mcp.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/video_edit_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+    "/requirements.txt",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py310'] # Corrected: Changed from 'py38' to 'py310'
+
+[tool.mypy]
+python_version = "3.10" # Corrected: Changed from "3.8" to "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

@@ -1,0 +1,6 @@
+include README.md
+include requirements.txt
+include pyproject.toml
+recursive-include src/video_edit_mcp *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co] 
