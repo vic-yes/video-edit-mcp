@@ -36,7 +36,7 @@ def register_audio_tools(mcp):
     def extract_audio(video_path: str, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             output_path = get_output_path(output_name)
-            from utils import VideoStore
+            from .utils import VideoStore
             video = VideoStore.load(video_path)
             
             if video.audio is None:
