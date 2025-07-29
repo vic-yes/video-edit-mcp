@@ -61,6 +61,8 @@ Add this configuration to your MCP configuration file:
     "video_editing": {
       "command": "uvx",
       "args": [
+        "--python",
+        "3.11",
         "video-edit-mcp"
       ]
     }
