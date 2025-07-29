@@ -6,6 +6,13 @@ A powerful **Model Context Protocol (MCP)** server designed for advanced video a
 ![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
+
+https://github.com/user-attachments/assets/134b8b82-80b1-4678-8930-ab53121b121f
+
+
+
+
+
 ## ✨ Key Features
 
 ### 🎥 Video Operations
