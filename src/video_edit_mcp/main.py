@@ -18,7 +18,7 @@ register_util_tools(mcp)
 
 def main():
     """Entry point for the MCP server"""
-    mcp.run(transport="stdio")
+    mcp.run(transport="streamable-http")
 
 if __name__ == "__main__":
     main()
