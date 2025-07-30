@@ -5,6 +5,7 @@ A powerful **Model Context Protocol (MCP)** server designed for advanced video a
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![smithery badge](https://smithery.ai/badge/@Aditya2755/video-edit-mcp)](https://smithery.ai/server/@Aditya2755/video-edit-mcp)
 
 
 https://github.com/user-attachments/assets/134b8b82-80b1-4678-8930-ab53121b121f
@@ -50,6 +51,14 @@ Seamlessly chain multiple operations together without creating intermediate file
 - **typing-extensions>=4.0.0**
 
 ## ⚙️ Installation & Setup
+
+### Installing via Smithery
+
+To install video-edit-mcp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@Aditya2755/video-edit-mcp):
+
+```bash
+npx -y @smithery/cli install @Aditya2755/video-edit-mcp --client claude
+```
 
 ### For Claude Desktop / Cursor MCP Integration
 
