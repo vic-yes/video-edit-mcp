@@ -8,13 +8,16 @@ from moviepy.video.fx.fadein import fadein
 from moviepy.video.fx.fadeout import fadeout
 from moviepy.video.fx.blackwhite import blackwhite
 from moviepy.video.fx.mirror_x import mirror_x
-from moviepy.editor import ImageClip, CompositeVideoClip, ImageSequenceClip, TextClip
+from moviepy.editor import ImageClip, CompositeVideoClip, VideoFileClip, TextClip
+import cv2
+import numpy as np
 from typing import Dict, Any, Optional, List, Tuple
 import os
 import logging
 import imageio
 from .utils import get_output_path, VideoStore, AudioStore
 import moviepy.config as mpy_conf
+from moviepy.video.io.ffmpeg_reader import ffmpeg_parse_infos
 
 
 logger = logging.getLogger(__name__)
@@ -196,6 +199,11 @@ def register_video_tools(mcp):
 
     @mcp.tool(description="Use this tool for resizing the video make sure first whether video needs to be saved directly or just object has to be returned for further processing, if there are multiple steps to be done after resizing then make sure to return object and return path should be false else return path should be true")
     def resize_video(video_path: str, size: Tuple[int, int], output_name: str, return_path: bool) -> Dict[str, Any]:
+        cap = cv2.VideoCapture(video_path)
+    
+        if not cap.isOpened():
+            raise Exception(f"Can't open the video: {video_path}")
+        
         try:
             # Input validation
             if not size or len(size) != 2 or size[0] <= 0 or size[1] <= 0:
@@ -206,18 +214,65 @@ def register_video_tools(mcp):
                 }
             
             output_path = get_output_path(output_name)
-            video = VideoStore.load(video_path)
-            resized_video = video.resize(newsize=size)
+
+            original_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            original_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+            target_width, target_height = size
+            
+            # 计算保持原始比例的新尺寸
+            original_aspect = original_width / original_height
+            target_aspect = target_width / target_height
+            
+            # 计算缩放后的尺寸（不拉伸）
+            if original_aspect > target_aspect:
+                # 原始视频更宽，以宽度为基准缩放
+                scale_factor = target_width / original_width
+                new_width = target_width
+                new_height = int(original_height * scale_factor)
+            else:
+                # 原始视频更高，以高度为基准缩放
+                scale_factor = target_height / original_height
+                new_width = int(original_width * scale_factor)
+                new_height = target_height
+            
+            # even size
+            new_width = new_width - (new_width % 2)
+            new_height = new_height - (new_height % 2)
+
+            logger.info(f"cv_original_width: {original_width}, cv_original_height: {original_height}")
+            logger.info(f"new_width: {new_width}, new_height: {new_height}")
+            # 首先调整视频大小（不拉伸）
+            resized_clip = VideoFileClip(video_path, target_resolution=(new_height,new_width))
+            logger.info(f"resized video size: {resized_clip.size}")
+
+            # 创建黑色背景
+            from moviepy.editor import ColorClip, CompositeVideoClip
+            background = ColorClip(
+                size=(target_width, target_height),
+                color=(0, 0, 0),
+                duration=resized_clip.duration
+            )
+            
+            # 计算居中位置
+            x_pos = (target_width - new_width) // 2
+            y_pos = (target_height - new_height) // 2
+            
+            # 将调整后的视频叠加到黑色背景上
+            final_video = CompositeVideoClip(
+                [background, resized_clip.set_position((x_pos, y_pos))],
+                size=(target_width, target_height)
+            )
             
             if return_path:
-                resized_video.write_videofile(output_path)
+                final_video.write_videofile(output_path, codec='libx264', audio_codec='aac')
                 return {
                     "success": True,
                     "output_path": output_path,
                     "message": "Video resized successfully"
                 }
             else:
-                ref = VideoStore.store(resized_video)
+                ref = VideoStore.store(final_video)
                 return {
                     "success": True,
                     "output_object": ref
@@ -230,6 +285,24 @@ def register_video_tools(mcp):
                 "error_type": type(e).__name__,
                 "message": "Error resizing video"
             }
+        finally:
+            # 释放视频捕获对象
+            cap.release()
+
+    def even_size(clip):
+        """ 
+        Crops the clip to make both width and height even.
+        """
+        w, h = clip.size
+        new_w = w - (w % 2)  # 如果是奇数就减1，偶数保持不变
+        new_h = h - (h % 2)  # 如果是奇数就减1，偶数保持不变
+
+        logger.info(f"w: {w}, h: {h}, new_w: {new_w}, new_h: {new_h}")
+        
+        if w == new_w and h == new_h:
+            return clip
+        
+        return clip.crop(width=new_w, height=new_h)
 
     @mcp.tool(description="Use this tool for cropping the video, provide x1, y1, x2, y2 coordinates, and output name like cropped_video.mp4 , if there are multiple steps to be done after cropping then make sure to return object and return path should be false else return path should be true")
     def crop_video(video_path: str, x1: int, y1: int, x2: int, y2: int, output_name: str, return_path: bool) -> Dict[str, Any]:
@@ -574,33 +647,6 @@ def register_video_tools(mcp):
                 "error": str(e),
                 "error_type": type(e).__name__,
                 "message": "Error converting video to grayscale"
-            }
-
-    @mcp.tool(description="Use this tool for creating video from image sequence, provide folder path with images, fps, and output name, if there are multiple steps to be done after creating video from images then make sure to return object and return path should be false else return path should be true")
-    def images_to_video(images_folder_path:str, fps:int, output_name:str, return_path:bool) -> Dict[str,Any]:
-        try:
-            output_path = get_output_path(output_name)
-            clip = ImageSequenceClip(images_folder_path, fps=fps)
-            if return_path:
-                clip.write_videofile(output_path)
-                return {
-                    "success": True,
-                    "output_path": output_path,
-                    "message": "Video created from images successfully"
-                }
-            else:
-                ref = VideoStore.store(clip)
-                return {
-                    "success": True,
-                    "output_object": ref
-                }
-        except Exception as e:
-            logger.error(f"Error creating video from images {images_folder_path}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "error_type": type(e).__name__,
-                "message": "Error creating video from images"
             }
 
     @mcp.tool(description="Use this tool for extracting frames from video as images, provide start_time, end_time, and fps for extraction, if there are multiple steps to be done after extracting frames then make sure to return object and return path should be false else return path should be true")
