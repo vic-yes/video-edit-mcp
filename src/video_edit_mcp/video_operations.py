@@ -8,7 +8,7 @@ from moviepy.video.fx.fadein import fadein
 from moviepy.video.fx.fadeout import fadeout
 from moviepy.video.fx.blackwhite import blackwhite
 from moviepy.video.fx.mirror_x import mirror_x
-from moviepy.editor import ImageClip, CompositeVideoClip, VideoFileClip, TextClip
+from moviepy.editor import ColorClip, ImageClip, CompositeVideoClip, VideoFileClip, TextClip, transfx
 import cv2
 import numpy as np
 from typing import Dict, Any, Optional, List, Tuple
@@ -17,7 +17,6 @@ import logging
 import imageio
 from .utils import get_output_path, VideoStore, AudioStore
 import moviepy.config as mpy_conf
-from moviepy.video.io.ffmpeg_reader import ffmpeg_parse_infos
 
 
 logger = logging.getLogger(__name__)
@@ -196,7 +195,6 @@ def register_video_tools(mcp):
             }
 
  
-
     @mcp.tool(description="Use this tool for resizing the video make sure first whether video needs to be saved directly or just object has to be returned for further processing, if there are multiple steps to be done after resizing then make sure to return object and return path should be false else return path should be true")
     def resize_video(video_path: str, size: Tuple[int, int], output_name: str, return_path: bool) -> Dict[str, Any]:
         cap = cv2.VideoCapture(video_path)
@@ -247,7 +245,6 @@ def register_video_tools(mcp):
             logger.info(f"resized video size: {resized_clip.size}")
 
             # 创建黑色背景
-            from moviepy.editor import ColorClip, CompositeVideoClip
             background = ColorClip(
                 size=(target_width, target_height),
                 color=(0, 0, 0),
@@ -288,21 +285,6 @@ def register_video_tools(mcp):
         finally:
             # 释放视频捕获对象
             cap.release()
-
-    def even_size(clip):
-        """ 
-        Crops the clip to make both width and height even.
-        """
-        w, h = clip.size
-        new_w = w - (w % 2)  # 如果是奇数就减1，偶数保持不变
-        new_h = h - (h % 2)  # 如果是奇数就减1，偶数保持不变
-
-        logger.info(f"w: {w}, h: {h}, new_w: {new_w}, new_h: {new_h}")
-        
-        if w == new_w and h == new_h:
-            return clip
-        
-        return clip.crop(width=new_w, height=new_h)
 
     @mcp.tool(description="Use this tool for cropping the video, provide x1, y1, x2, y2 coordinates, and output name like cropped_video.mp4 , if there are multiple steps to be done after cropping then make sure to return object and return path should be false else return path should be true")
     def crop_video(video_path: str, x1: int, y1: int, x2: int, y2: int, output_name: str, return_path: bool) -> Dict[str, Any]:
@@ -444,7 +426,6 @@ def register_video_tools(mcp):
                 "error_type": type(e).__name__,
                 "message": "Error adding audio to video"
             }
-
 
     @mcp.tool(description="Use this tool for adding fade in effect to video, provide fade_duration in seconds, and output name like fadein_video.mp4, if there are multiple steps to be done after adding fade in then make sure to return object and return path should be false else return path should be true")
     def fadein_video(video_path: str, fade_duration: float, output_name: str, return_path: bool) -> Dict[str, Any]:
@@ -813,3 +794,133 @@ def register_video_tools(mcp):
                 "message": "Error adding video overlay"
             } 
         
+    def concatenate_videos_with_transitions(
+        video_paths: List[str], 
+        output_name: str, 
+        transition_duration: float = 1.0,
+        target_size: Tuple[int, int] = (1280, 720),
+        return_path: bool = True
+    ) -> Dict[str, Any]:
+        """
+        将多个视频乱序拼接在一起，并应用转场效果
+        
+        Args:
+            video_paths: 视频文件路径列表
+            output_name: 输出文件名
+            transition_duration: 转场持续时间（秒）
+            target_size: 目标视频尺寸 (width, height)
+            return_path: 是否返回文件路径（True）或视频对象（False）
+        
+        Returns:
+            包含操作结果的字典
+        """
+        try:
+            # 验证输入
+            if not video_paths or len(video_paths) < 1:
+                return {
+                    "success": False,
+                    "error": "至少需要提供一个视频文件",
+                    "message": "无效的视频路径列表"
+                }
+            
+            if not target_size or len(target_size) != 2 or target_size[0] <= 0 or target_size[1] <= 0:
+                return {
+                    "success": False,
+                    "error": "尺寸必须是两个正整数的元组 (width, height)",
+                    "message": "无效的尺寸参数"
+                }
+            
+            # 加载所有视频并调整到统一尺寸
+            clips = []
+            for path in video_paths:
+                try:
+                    clip = VideoFileClip(path)
+                    # 调整到目标尺寸
+                    resized_clip = resize_clip_to_target(clip, target_size)
+                    clips.append(resized_clip)
+                    clip.close()  # 关闭原始剪辑以释放资源
+                except Exception as e:
+                    logger.error(f"加载视频 {path} 时出错: {e}")
+                    return {
+                        "success": False,
+                        "error": f"加载视频 {path} 时出错: {str(e)}",
+                        "message": "视频加载失败"
+                    }
+            
+            # 随机打乱视频顺序
+            random.shuffle(clips)
+            
+            # 定义可用的转场效果
+            transitions = [
+                ("crossfade", None),
+                ("slide_in", "left"),
+                ("slide_in", "right"),
+                ("slide_in", "top"),
+                ("slide_in", "bottom"),
+                ("slide_out", "left"),
+                ("slide_out", "right"),
+                ("slide_out", "top"),
+                ("slide_out", "bottom")
+            ]
+            
+            # 为每个视频应用转场效果（最后一个视频不需要转场）
+            clips_with_transitions = []
+            for i, clip in enumerate(clips):
+                if i < len(clips) - 1:
+                    # 随机选择一个转场效果
+                    trans_type, side = random.choice(transitions)
+                    
+                    # 应用转场效果
+                    if trans_type == "crossfade":
+                        # 对于交叉淡入淡出，需要在两个剪辑上都应用效果
+                        clip = crossfadeout(clip, transition_duration)
+                        next_clip = crossfadein(clips[i+1], transition_duration)
+                        clips[i+1] = next_clip
+                    elif trans_type == "slide_in":
+                        clip = slide_out(clip, transition_duration, side)
+                    elif trans_type == "slide_out":
+                        clip = slide_out(clip, transition_duration, side)
+                
+                clips_with_transitions.append(clip)
+            
+            # 拼接所有视频
+            final_clip = concatenate_videoclips(clips_with_transitions, method="compose")
+            
+            # 根据return_path参数决定返回方式
+            if return_path:
+                output_path = get_output_path(output_name)
+                final_clip.write_videofile(
+                    output_path, 
+                    codec='libx264', 
+                    audio_codec='aac',
+                    fps=24  # 设置一个通用的帧率
+                )
+                
+                # 关闭所有剪辑以释放资源
+                for clip in clips_with_transitions:
+                    clip.close()
+                final_clip.close()
+                
+                return {
+                    "success": True,
+                    "output_path": output_path,
+                    "message": f"视频拼接成功，共处理 {len(video_paths)} 个视频"
+                }
+            else:
+                # 返回视频对象引用（需要根据您的VideoStore实现进行调整）
+                # ref = VideoStore.store(final_clip)
+                # 这里简化处理，直接返回剪辑对象
+                return {
+                    "success": True,
+                    "output_object": final_clip,
+                    "message": f"视频拼接成功，共处理 {len(video_paths)} 个视频"
+                }
+                
+        except Exception as e:
+            logger.error(f"视频拼接过程中出错: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "message": "视频拼接失败"
+            }
