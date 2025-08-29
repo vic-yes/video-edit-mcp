@@ -8,9 +8,10 @@ from moviepy.video.fx.fadein import fadein
 from moviepy.video.fx.fadeout import fadeout
 from moviepy.video.fx.blackwhite import blackwhite
 from moviepy.video.fx.mirror_x import mirror_x
-from moviepy.editor import ColorClip, ImageClip, CompositeVideoClip, VideoFileClip, TextClip, transfx
+from moviepy.editor import ColorClip, ImageClip, CompositeVideoClip, VideoFileClip, TextClip
 import cv2
 import numpy as np
+import random
 from typing import Dict, Any, Optional, List, Tuple
 import os
 import logging
@@ -794,11 +795,11 @@ def register_video_tools(mcp):
                 "message": "Error adding video overlay"
             } 
         
-    def concatenate_videos_with_transitions(
+    @mcp.tool()
+    def concatenate_videos(
         video_paths: List[str], 
-        output_name: str, 
+        output_path: str, 
         transition_duration: float = 1.0,
-        target_size: Tuple[int, int] = (1280, 720),
         return_path: bool = True
     ) -> Dict[str, Any]:
         """
@@ -808,7 +809,6 @@ def register_video_tools(mcp):
             video_paths: 视频文件路径列表
             output_name: 输出文件名
             transition_duration: 转场持续时间（秒）
-            target_size: 目标视频尺寸 (width, height)
             return_path: 是否返回文件路径（True）或视频对象（False）
         
         Returns:
@@ -823,77 +823,89 @@ def register_video_tools(mcp):
                     "message": "无效的视频路径列表"
                 }
             
-            if not target_size or len(target_size) != 2 or target_size[0] <= 0 or target_size[1] <= 0:
-                return {
-                    "success": False,
-                    "error": "尺寸必须是两个正整数的元组 (width, height)",
-                    "message": "无效的尺寸参数"
-                }
-            
             # 加载所有视频并调整到统一尺寸
-            clips = []
-            for path in video_paths:
-                try:
-                    clip = VideoFileClip(path)
-                    # 调整到目标尺寸
-                    resized_clip = resize_clip_to_target(clip, target_size)
-                    clips.append(resized_clip)
-                    clip.close()  # 关闭原始剪辑以释放资源
-                except Exception as e:
-                    logger.error(f"加载视频 {path} 时出错: {e}")
-                    return {
-                        "success": False,
-                        "error": f"加载视频 {path} 时出错: {str(e)}",
-                        "message": "视频加载失败"
-                    }
+            clips = [VideoFileClip(path) for path in video_paths]
             
             # 随机打乱视频顺序
-            random.shuffle(clips)
+            #random.shuffle(clips)
+
+            # video_start = 0
+            # for clip in clips:
+            #     clip.set_start(video_start)
+            #     video_start += clip.duration
             
             # 定义可用的转场效果
             transitions = [
                 ("crossfade", None),
-                ("slide_in", "left"),
-                ("slide_in", "right"),
-                ("slide_in", "top"),
-                ("slide_in", "bottom"),
-                ("slide_out", "left"),
-                ("slide_out", "right"),
-                ("slide_out", "top"),
-                ("slide_out", "bottom")
+                ("slide", "left"),
+                ("slide", "right"),
+                ("slide", "top"),
+                ("slide", "bottom")
             ]
             
-            # 为每个视频应用转场效果（最后一个视频不需要转场）
+            # 为每个视频对之间应用转场效果
             clips_with_transitions = []
-            for i, clip in enumerate(clips):
-                if i < len(clips) - 1:
-                    # 随机选择一个转场效果
-                    trans_type, side = random.choice(transitions)
+
+            # for i in range(len(clips)):
+            #     trans_type, side = random.choice(transitions)
+
+            #     if trans_type == "crossfade":
+            #         # 交叉淡入淡出
+            #         current_clip = clips[i].fx(transfx.crossfadein, transition_duration).fx(transfx.crossfadeout, transition_duration)
+            #         clips_with_transitions.append(current_clip)
+            #     elif trans_type == "slide":
+            #         # 滑入效果
+            #         current_clip = clips[i].fx(transfx.slide_in, duration=transition_duration, side=side).fx(transfx.slide_out, duration=transition_duration, side=side)
+            #         clips_with_transitions.append(current_clip)
+
+            # for i in range(len(clips)):
+            #     if i == 0:
+            #         # 第一个视频只应用淡入
+            #         current_clip = clips[i].fx(transfx.fadein, transition_duration)
+            #     elif i == len(clips) - 1:
+            #         # 最后一个视频只应用淡出
+            #         current_clip = clips[i].fx(transfx.fadeout, transition_duration)
+            #     else:
+            #         # 中间视频应用转场效果
+            #         trans_type, side = random.choice(transitions)
                     
-                    # 应用转场效果
-                    if trans_type == "crossfade":
-                        # 对于交叉淡入淡出，需要在两个剪辑上都应用效果
-                        clip = crossfadeout(clip, transition_duration)
-                        next_clip = crossfadein(clips[i+1], transition_duration)
-                        clips[i+1] = next_clip
-                    elif trans_type == "slide_in":
-                        clip = slide_out(clip, transition_duration, side)
-                    elif trans_type == "slide_out":
-                        clip = slide_out(clip, transition_duration, side)
+            #         if trans_type == "crossfade":
+            #             current_clip = clips[i].crossfadein(transition_duration)
+            #         elif trans_type == "slide":
+            #             # 应用滑入效果到前一个视频的结尾
+            #             prev_clip = clips[i-1].fx(transfx.slide_out, duration=transition_duration, side=side)
+            #             current_clip = clips[i].fx(transfx.slide_in, duration=transition_duration, side=side)
                 
-                clips_with_transitions.append(clip)
+            #     clips_with_transitions.append(current_clip)
+
+            #clip1 = clips[0].fx(transfx.fadein, transition_duration)
+            #clip1 = clip1.fx(transfx.fadeout, transition_duration)
+            #clip1.set_start(0)
+            #clip2 = clips[1].fx(transfx.fadein, transition_duration)
+            #clip2 = clips[1].fx(transfx.fadeout, transition_duration)
+            #clip2.set_start(5)
+
+            #clip1.set_start(0)
+            #clip2.set_start(3)
+
+            clips_with_transitions.append(clips[0])
             
-            # 拼接所有视频
-            final_clip = concatenate_videoclips(clips_with_transitions, method="compose")
-            
+            clip2 = clips[1].set_start(clips[0].duration)
+            clips_with_transitions.append(clip2)
+
+            logger.info(f"clips_with_transitions: {len(clips_with_transitions)}")
+            logger.info(f"clip1: {clips[0].duration}, {clips[0].start}, {clips[0].end}, clip2: {clip2.duration}, {clip2.start}, {clip2.end}")
+
+            #logger.info(f"clips start: {clip1.start}, {clip2.start}")
+
+            final_clip = CompositeVideoClip(clips_with_transitions)
+
             # 根据return_path参数决定返回方式
             if return_path:
-                output_path = get_output_path(output_name)
                 final_clip.write_videofile(
                     output_path, 
                     codec='libx264', 
-                    audio_codec='aac',
-                    fps=24  # 设置一个通用的帧率
+                    audio_codec='aac'
                 )
                 
                 # 关闭所有剪辑以释放资源
