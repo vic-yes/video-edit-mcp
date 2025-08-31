@@ -165,7 +165,7 @@ def register_video_tools(mcp):
             }
  
     @mcp.tool(description="Use this tool for resizing the video make sure first whether video needs to be saved directly or just object has to be returned for further processing, if there are multiple steps to be done after resizing then make sure to return object and return path should be false else return path should be true")
-    def resize_video(video_path: str, size: Tuple[int, int], output_name: str, return_path: bool) -> Dict[str, Any]:
+    def resize_video(video_path: str, size: Tuple[int, int], output_path: str, return_path: bool) -> Dict[str, Any]:
         cap = cv2.VideoCapture(video_path)
     
         if not cap.isOpened():
@@ -179,8 +179,6 @@ def register_video_tools(mcp):
                     "error": "Size must be a tuple of two positive integers (width, height)",
                     "message": "Invalid size parameters"
                 }
-            
-            output_path = get_output_path(output_name)
 
             original_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             original_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -796,7 +794,7 @@ def register_video_tools(mcp):
             clips = [VideoFileClip(path) for path in video_paths]
             
             # Shuffle video order randomly
-            #random.shuffle(clips)
+            random.shuffle(clips)
             
             # Define available transition effects
             transitions = [
