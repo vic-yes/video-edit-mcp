@@ -163,38 +163,6 @@ def register_video_tools(mcp):
                 "error_type": type(e).__name__,
                 "message": "Error trimming video"
             }
-
-    @mcp.tool(description="Use this tool for merging two videos, provide two video paths, and output name like merged_video.mp4 , if there are multiple steps to be done after merging then make sure to return object and return path should be false else return path should be true")
-    def merge_video(video_path: str, video_path2: str, output_name: str, return_path: bool) -> Dict[str, Any]:
-        """Merge two videos into one."""
-        try:
-            output_path = get_output_path(output_name)
-            video1 = VideoStore.load(video_path)
-            video2 = VideoStore.load(video_path2)
-            merged_video = concatenate_videoclips([video1, video2])
-            if return_path:
-                merged_video.write_videofile(output_path)
-                return {
-                    "success": True,
-                    "output_path": output_path,
-                    "message": "Videos merged successfully"
-                }
-            else:
-                ref = VideoStore.store(merged_video)
-                return {
-                    "success": True,
-                    "output_object": ref,
-                    "message": "Videos merged successfully"
-                }
-        except Exception as e:
-            logger.error(f"Error merging videos {video_path} and {video_path2}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "error_type": type(e).__name__,
-                "message": "Error merging videos"
-            }
-
  
     @mcp.tool(description="Use this tool for resizing the video make sure first whether video needs to be saved directly or just object has to be returned for further processing, if there are multiple steps to be done after resizing then make sure to return object and return path should be false else return path should be true")
     def resize_video(video_path: str, size: Tuple[int, int], output_name: str, return_path: bool) -> Dict[str, Any]:
@@ -796,45 +764,41 @@ def register_video_tools(mcp):
             } 
         
     @mcp.tool()
-    def concatenate_videos(
-        video_paths: List[str], 
+    def merge_videos(
+        video_paths: List[str],
+        audios_folder: str,
         output_path: str, 
         transition_duration: float = 1.0,
         return_path: bool = True
     ) -> Dict[str, Any]:
         """
-        将多个视频乱序拼接在一起，并应用转场效果
+        Use this tool for merging multiple videos, provide multiple video paths, and output path like /path/merged_video.mp4 , if there are multiple steps to be done after merging then make sure to return object and return path should be false else return path should be true
         
         Args:
-            video_paths: 视频文件路径列表
-            output_name: 输出文件名
-            transition_duration: 转场持续时间（秒）
-            return_path: 是否返回文件路径（True）或视频对象（False）
+            video_paths: List of video file paths
+            audios_folder: Folder containing audio files to choose from
+            output_path: Output file path
+            transition_duration: Transition duration in seconds
+            return_path: Whether to return file path (True) or video object (False)
         
         Returns:
-            包含操作结果的字典
+            Dictionary with success status and output path or object reference
         """
         try:
-            # 验证输入
+            # Validate input
             if not video_paths or len(video_paths) < 1:
                 return {
                     "success": False,
-                    "error": "至少需要提供一个视频文件",
-                    "message": "无效的视频路径列表"
+                    "error": "At least one video file is required",
+                    "message": "Invalid video paths list"
                 }
             
-            # 加载所有视频并调整到统一尺寸
             clips = [VideoFileClip(path) for path in video_paths]
             
-            # 随机打乱视频顺序
+            # Shuffle video order randomly
             #random.shuffle(clips)
-
-            # video_start = 0
-            # for clip in clips:
-            #     clip.set_start(video_start)
-            #     video_start += clip.duration
             
-            # 定义可用的转场效果
+            # Define available transition effects
             transitions = [
                 ("crossfade", None),
                 ("slide", "left"),
@@ -843,64 +807,63 @@ def register_video_tools(mcp):
                 ("slide", "bottom")
             ]
             
-            # 为每个视频对之间应用转场效果
+            # Apply transition effects between each video pair
             clips_with_transitions = []
+            video_start = 0
+            for i in range(len(clips)):
+                if i == 0:
+                    current_clip = clips[i].fx(vfx.fadein, transition_duration)
+                else:
+                    trans_type, side = random.choice(transitions)
 
-            # for i in range(len(clips)):
-            #     trans_type, side = random.choice(transitions)
+                    if trans_type == "crossfade":
+                        current_clip = clips[i].fx(transfx.crossfadein, transition_duration)
+                    elif trans_type == "slide":
+                        current_clip = clips[i].fx(transfx.slide_in, duration=transition_duration, side=side)
 
-            #     if trans_type == "crossfade":
-            #         # 交叉淡入淡出
-            #         current_clip = clips[i].fx(transfx.crossfadein, transition_duration).fx(transfx.crossfadeout, transition_duration)
-            #         clips_with_transitions.append(current_clip)
-            #     elif trans_type == "slide":
-            #         # 滑入效果
-            #         current_clip = clips[i].fx(transfx.slide_in, duration=transition_duration, side=side).fx(transfx.slide_out, duration=transition_duration, side=side)
-            #         clips_with_transitions.append(current_clip)
-
-            # for i in range(len(clips)):
-            #     if i == 0:
-            #         # 第一个视频只应用淡入
-            #         current_clip = clips[i].fx(transfx.fadein, transition_duration)
-            #     elif i == len(clips) - 1:
-            #         # 最后一个视频只应用淡出
-            #         current_clip = clips[i].fx(transfx.fadeout, transition_duration)
-            #     else:
-            #         # 中间视频应用转场效果
-            #         trans_type, side = random.choice(transitions)
-                    
-            #         if trans_type == "crossfade":
-            #             current_clip = clips[i].crossfadein(transition_duration)
-            #         elif trans_type == "slide":
-            #             # 应用滑入效果到前一个视频的结尾
-            #             prev_clip = clips[i-1].fx(transfx.slide_out, duration=transition_duration, side=side)
-            #             current_clip = clips[i].fx(transfx.slide_in, duration=transition_duration, side=side)
-                
-            #     clips_with_transitions.append(current_clip)
-
-            #clip1 = clips[0].fx(transfx.fadein, transition_duration)
-            #clip1 = clip1.fx(transfx.fadeout, transition_duration)
-            #clip1.set_start(0)
-            #clip2 = clips[1].fx(transfx.fadein, transition_duration)
-            #clip2 = clips[1].fx(transfx.fadeout, transition_duration)
-            #clip2.set_start(5)
-
-            #clip1.set_start(0)
-            #clip2.set_start(3)
-
-            clips_with_transitions.append(clips[0])
-            
-            clip2 = clips[1].set_start(clips[0].duration)
-            clips_with_transitions.append(clip2)
-
-            logger.info(f"clips_with_transitions: {len(clips_with_transitions)}")
-            logger.info(f"clip1: {clips[0].duration}, {clips[0].start}, {clips[0].end}, clip2: {clip2.duration}, {clip2.start}, {clip2.end}")
-
-            #logger.info(f"clips start: {clip1.start}, {clip2.start}")
+                    if i == len(clips) - 1:
+                        current_clip = current_clip.fx(vfx.fadeout, transition_duration)
+    
+                current_clip = current_clip.set_start(video_start)
+                video_start += current_clip.duration - transition_duration
+                clips_with_transitions.append(current_clip)
 
             final_clip = CompositeVideoClip(clips_with_transitions)
 
-            # 根据return_path参数决定返回方式
+            if audios_folder and os.path.exists(audios_folder):
+                try:
+                    audio_extensions = ['.mp3', '.wav', '.aac', '.m4a', '.ogg']
+                    
+                    # 获取文件夹中的所有音频文件
+                    audio_files = []
+                    if os.path.exists(audios_folder) and os.path.isdir(audios_folder):
+                        for file in os.listdir(audios_folder):
+                            if any(file.lower().endswith(ext) for ext in audio_extensions):
+                                audio_files.append(os.path.join(audios_folder, file))
+    
+                    if audio_files:
+                        # 随机选择一个音频文件
+                        random_audio_path = random.choice(audio_files)
+                        logger.info(f"Selected random audio: {random_audio_path}")
+                        
+                        audio_clip = AudioFileClip(random_audio_path)
+                        if audio_clip.duration < final_clip.duration:
+                            # Loop audio to match video duration
+                            audio_clip = audio_clip.fx(afx.audio_loop, duration=final_clip.duration)
+                        elif audio_clip.duration > final_clip.duration:
+                            # Trim audio to video duration
+                            audio_clip = audio_clip.subclip(0, final_clip.duration)
+        
+                        fadeout_duration = 2.0  # 淡出持续时间（秒）
+                        audio_clip = audio_clip.fx(afx.audio_fadeout, duration=fadeout_duration)
+
+                        final_clip = final_clip.set_audio(audio_clip)
+                    else:
+                        logger.warning(f"No audio files found in directory: {audios_folder}")
+                except Exception as audio_error:
+                    logger.warning(f"Could not add audio: {audio_error}")
+
+            # Decide return method based on return_path parameter
             if return_path:
                 final_clip.write_videofile(
                     output_path, 
@@ -908,7 +871,7 @@ def register_video_tools(mcp):
                     audio_codec='aac'
                 )
                 
-                # 关闭所有剪辑以释放资源
+                # Close all clips to release resources
                 for clip in clips_with_transitions:
                     clip.close()
                 final_clip.close()
@@ -916,23 +879,22 @@ def register_video_tools(mcp):
                 return {
                     "success": True,
                     "output_path": output_path,
-                    "message": f"视频拼接成功，共处理 {len(video_paths)} 个视频"
+                    "message": f"Video concatenation successful, processed {len(video_paths)} videos"
                 }
             else:
-                # 返回视频对象引用（需要根据您的VideoStore实现进行调整）
-                # ref = VideoStore.store(final_clip)
-                # 这里简化处理，直接返回剪辑对象
+                ref = VideoStore.store(final_clip)
+                
                 return {
                     "success": True,
-                    "output_object": final_clip,
-                    "message": f"视频拼接成功，共处理 {len(video_paths)} 个视频"
+                    "output_object": ref,
+                    "message": f"Video concatenation successful, processed {len(video_paths)} videos"
                 }
                 
         except Exception as e:
-            logger.error(f"视频拼接过程中出错: {e}")
+            logger.error(f"Error during video concatenation: {e}")
             return {
                 "success": False,
                 "error": str(e),
                 "error_type": type(e).__name__,
-                "message": "视频拼接失败"
+                "message": "Video concatenation failed"
             }

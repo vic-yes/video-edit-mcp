@@ -97,9 +97,6 @@ def register_image_tools(mcp):
         brightness: Optional[float] = None,
         contrast: Optional[float] = None,
         saturation: Optional[float] = None,
-        # 其他效果
-        fade_in: Optional[float] = None,
-        fade_out: Optional[float] = None,
         # 音频选项
         audio_path: Optional[str] = None,
         loop_audio: bool = False
@@ -122,8 +119,6 @@ def register_image_tools(mcp):
             brightness: Brightness adjustment (-1.0 to 1.0)
             contrast: Contrast adjustment (0.0 to 2.0+)
             saturation: Saturation adjustment (0.0 to 2.0+)
-            fade_in: Fade in duration in seconds
-            fade_out: Fade out duration in seconds
             audio_path: Path to audio file to add to video
             loop_audio: Whether to loop audio if shorter than video duration
         
@@ -207,13 +202,6 @@ def register_image_tools(mcp):
             # Apply rotation
             if rotation_angle is not None:
                 final_clip = final_clip.fx(vfx.rotate, angle=rotation_angle)
-            
-            # Apply fade effects
-            if fade_in is not None:
-                final_clip = final_clip.fx(vfx.fadein, fade_in)
-            
-            if fade_out is not None:
-                final_clip = final_clip.fx(vfx.fadeout, fade_out)
             
             # Set FPS
             final_clip = final_clip.set_fps(fps)
