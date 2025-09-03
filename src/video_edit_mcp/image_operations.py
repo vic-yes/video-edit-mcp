@@ -2,17 +2,158 @@ import cv2
 import numpy as np
 import os
 import logging
+import exifread
 from .editorpy.editor import *
 from moviepy.editor import *
 from moviepy.video.fx import *
+from PIL import Image
 from .utils import get_output_path, VideoStore, AudioStore
 from typing import Dict, Any, Optional, List, Tuple
-from moviepy.editor import ImageClip, CompositeVideoClip, ImageSequenceClip, TextClip
+from moviepy.editor import ImageClip, ImageSequenceClip
 
 logger = logging.getLogger(__name__)
 
 def register_image_tools(mcp):
     """Register all image processing tools with the MCP server"""
+
+    @mcp.tool()
+    def get_image_info(image_path: str) -> Dict[str, Any]:
+        """Get comprehensive information about an image file including dimensions, format, EXIF data, and file information."""
+        try:
+            # Load image file
+            with Image.open(image_path) as img:
+                # Basic image information
+                info = {
+                    "file_path": image_path,
+                    "filename": os.path.basename(image_path),
+                    "format": img.format,
+                    "mode": img.mode,
+                    "width": img.width,
+                    "height": img.height,
+                    "size": img.size,  # (width, height)
+                    "aspect_ratio": round(img.width / img.height, 2) if img.height > 0 else None,
+                    "is_animated": getattr(img, "is_animated", False),
+                    "n_frames": getattr(img, "n_frames", 1),
+                }
+                
+                # Get EXIF data if available - 修复编码问题
+                exif_data = {}
+                try:
+                    with open(image_path, 'rb') as f:
+                        tags = exifread.process_file(f, details=False)
+                        for tag, value in tags.items():
+                            if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'Filename', 'EXIF MakerNote'):
+                                # 安全地处理可能包含二进制数据的EXIF值
+                                try:
+                                    # 尝试直接转换为字符串
+                                    exif_data[tag] = str(value)
+                                except UnicodeDecodeError:
+                                    # 如果是二进制数据，进行base64编码
+                                    try:
+                                        exif_data[tag] = f"base64:{base64.b64encode(value).decode('utf-8')}"
+                                    except:
+                                        # 如果还是失败，跳过这个标签
+                                        continue
+                    
+                    if exif_data:
+                        info["has_exif"] = True
+                        info["exif_tags_count"] = len(exif_data)
+                        
+                        # Extract common EXIF metadata with safe handling
+                        common_exif = {}
+                        exif_mapping = {
+                            'EXIF DateTimeOriginal': 'date_time_original',
+                            'Image DateTime': 'date_time',
+                            'Image Make': 'camera_make',
+                            'Image Model': 'camera_model',
+                            'EXIF ExposureTime': 'exposure_time',
+                            'EXIF FNumber': 'f_number',
+                            'EXIF FocalLength': 'focal_length',
+                            'EXIF ISOSpeedRatings': 'iso',
+                            'EXIF Flash': 'flash',
+                        }
+                        
+                        for exif_tag, friendly_name in exif_mapping.items():
+                            if exif_tag in exif_data:
+                                try:
+                                    common_exif[friendly_name] = str(exif_data[exif_tag])
+                                except:
+                                    pass
+                        
+                        # Check for GPS data
+                        has_gps = any(tag.startswith('GPS') for tag in exif_data.keys())
+                        common_exif['has_gps'] = has_gps
+                        
+                        info["common_exif"] = common_exif
+                    else:
+                        info["has_exif"] = False
+                        
+                except Exception as e:
+                    info["has_exif"] = False
+                    info["exif_error"] = str(e)
+                
+                # Get ICC profile if available
+                if hasattr(img, 'icc_profile') and img.icc_profile:
+                    info["has_icc_profile"] = True
+                    info["icc_profile_size"] = len(img.icc_profile)
+                else:
+                    info["has_icc_profile"] = False
+                
+                # Get image metadata safely
+                if hasattr(img, 'info') and img.info:
+                    safe_info = {}
+                    for key, value in img.info.items():
+                        try:
+                            # 确保所有值都可以序列化为JSON
+                            if isinstance(value, (str, int, float, bool, type(None))):
+                                safe_info[key] = value
+                            else:
+                                safe_info[key] = str(value)
+                        except:
+                            safe_info[key] = "unserializable_value"
+                    info["image_info"] = safe_info
+                
+            # File size information
+            try:
+                file_size = os.path.getsize(image_path)
+                info["file_size_bytes"] = file_size
+                info["file_size_kb"] = round(file_size / 1024, 2)
+                info["file_size_mb"] = round(file_size / (1024 * 1024), 2)
+            except OSError:
+                info["file_size_bytes"] = None
+                info["file_size_kb"] = None
+                info["file_size_mb"] = None
+            
+            # Calculate compression ratio estimate
+            if info.get("file_size_bytes") and img.width and img.height:
+                # Estimate uncompressed size (rough approximation)
+                bytes_per_pixel_mapping = {
+                    'RGB': 3,
+                    'RGBA': 4,
+                    'L': 1,
+                    'LA': 2,
+                    'CMYK': 4,
+                    'YCbCr': 3
+                }
+                
+                bytes_per_pixel = bytes_per_pixel_mapping.get(img.mode, 3)
+                uncompressed_size = img.width * img.height * bytes_per_pixel
+                
+                if uncompressed_size > 0:
+                    info["compression_ratio"] = round(info["file_size_bytes"] / uncompressed_size, 4)
+                    info["estimated_bpp"] = round((info["file_size_bytes"] * 8) / (img.width * img.height), 2)
+            
+            return {
+                "success": True,
+                "image_info": info
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "image_path": image_path
+            }
 
     @mcp.tool(description="Use this tool for resizing the image")
     def resize_image(image_path: str, size: Tuple[int, int], output_path: str) -> Dict[str, Any]:
@@ -96,10 +237,7 @@ def register_image_tools(mcp):
         # 颜色调整
         brightness: Optional[float] = None,
         contrast: Optional[float] = None,
-        saturation: Optional[float] = None,
-        # 音频选项
-        audio_path: Optional[str] = None,
-        loop_audio: bool = False
+        saturation: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Convert an image to video with various effects and transformations.
@@ -119,8 +257,6 @@ def register_image_tools(mcp):
             brightness: Brightness adjustment (-1.0 to 1.0)
             contrast: Contrast adjustment (0.0 to 2.0+)
             saturation: Saturation adjustment (0.0 to 2.0+)
-            audio_path: Path to audio file to add to video
-            loop_audio: Whether to loop audio if shorter than video duration
         
         Returns:
             Dictionary with success status and output path or object reference
@@ -206,23 +342,6 @@ def register_image_tools(mcp):
             # Set FPS
             final_clip = final_clip.set_fps(fps)
             
-            # Add audio if provided
-            audio_clip = None
-            if audio_path and os.path.exists(audio_path):
-                try:
-                    audio_clip = AudioFileClip(audio_path)
-                    if loop_audio and audio_clip.duration < duration:
-                        # Loop audio to match video duration
-                        from moviepy.audio.fx.all import audio_loop
-                        audio_clip = audio_clip.fx(audio_loop, duration=duration)
-                    elif audio_clip.duration > duration:
-                        # Trim audio to video duration
-                        audio_clip = audio_clip.subclip(0, duration)
-                    
-                    final_clip = final_clip.set_audio(audio_clip)
-                except Exception as audio_error:
-                    logger.warning(f"Could not add audio: {audio_error}")
-            
             # Output handling
             if return_path:
                 final_clip.write_videofile(output_path, fps=fps)
@@ -241,8 +360,6 @@ def register_image_tools(mcp):
             
             # Clean up
             final_clip.close()
-            if audio_clip is not None:
-                audio_clip.close()
             
             return result
             
@@ -252,8 +369,6 @@ def register_image_tools(mcp):
             try:
                 if 'final_clip' in locals():
                     final_clip.close()
-                if 'audio_clip' in locals() and audio_clip is not None:
-                    audio_clip.close()
             except:
                 pass
             

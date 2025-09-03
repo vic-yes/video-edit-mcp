@@ -3,3 +3,4 @@ yt-dlp>=2023.1.6
 mcp>=1.12.2
 Pillow==9.5.0
 opencv-python>=4.5.0
+exifread>=3.5.1
