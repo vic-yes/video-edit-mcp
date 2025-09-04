@@ -32,7 +32,7 @@ def register_audio_tools(mcp):
                 "error_type": type(e).__name__
             }
 
-    @mcp.tool(description="Use this tool for extracting audio from the video , and make sure only give output name like extracted_audio.mp3 , some_hello.mp3 etc.. don't pass path just give meaningful names based on audio info, if there are multiple steps to be done after extracting audio then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for extracting audio from the video , and make sure only give output name like extracted_audio.mp3 , some_hello.mp3 etc.. don't pass path just give meaningful names based on audio info, if there are multiple steps to be done after extracting audio then make sure to return object and return path should be false else return path should be true")
     def extract_audio(video_path: str, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             output_path = get_output_path(output_name)
@@ -69,7 +69,7 @@ def register_audio_tools(mcp):
                 "message": "Error extracting audio"
             }
 
-    @mcp.tool(description="Trim audio file, make sure to provide proper start and end time, and make sure to provide output name like trimmed_audio.mp3, some_hello.mp3 etc. don't pass path just give meaningful names based on audio info, if there are multiple steps to be done after trimming then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Trim audio file, make sure to provide proper start and end time, and make sure to provide output name like trimmed_audio.mp3, some_hello.mp3 etc. don't pass path just give meaningful names based on audio info, if there are multiple steps to be done after trimming then make sure to return object and return path should be false else return path should be true")
     def trim_audio(audio_path: str, start_time: float, end_time: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -113,7 +113,7 @@ def register_audio_tools(mcp):
                 "message": "Error trimming audio"
             }
 
-    @mcp.tool(description="Use this tool to concatenate two audios, if there are multiple steps to be done after concatenating then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool to concatenate two audios, if there are multiple steps to be done after concatenating then make sure to return object and return path should be false else return path should be true")
     def concatenate_audio(audio_path_1: str, audio_path_2: str, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             output_path = get_output_path(output_name)
@@ -144,7 +144,7 @@ def register_audio_tools(mcp):
                 "message": "Error concatenating audio files"
             }
 
-    @mcp.tool(description="Use this tool to loop the audio, after looping make sure to provide output name like looped_audio.mp3, some_hello.mp3 etc. don't pass path just give meaningful names based on audio info and also make sure to provide duration in seconds, if there are multiple steps to be done after looping then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool to loop the audio, after looping make sure to provide output name like looped_audio.mp3, some_hello.mp3 etc. don't pass path just give meaningful names based on audio info and also make sure to provide duration in seconds, if there are multiple steps to be done after looping then make sure to return object and return path should be false else return path should be true")
     def loop_audio(audio_path: str, duration: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -182,7 +182,7 @@ def register_audio_tools(mcp):
                 "message": "Error looping audio"
             }
 
-    @mcp.tool(description="Adjust volume of an audio, if there are multiple steps to be done after adjusting volume then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Adjust volume of an audio, if there are multiple steps to be done after adjusting volume then make sure to return object and return path should be false else return path should be true")
     def adjust_vol(audio_path: str, volume_level: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -220,7 +220,7 @@ def register_audio_tools(mcp):
                 "message": "Error adjusting audio volume"
             }
 
-    @mcp.tool(description="Use this tool for audio fade in effect, provide fade_duration in seconds, and output name like fadein_audio.mp3, if there are multiple steps to be done after adding fade in then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for audio fade in effect, provide fade_duration in seconds, and output name like fadein_audio.mp3, if there are multiple steps to be done after adding fade in then make sure to return object and return path should be false else return path should be true")
     def fadein_audio(audio_path:str, fade_duration:float, output_name:str, return_path:bool) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)
@@ -248,7 +248,7 @@ def register_audio_tools(mcp):
                 "message": "Error adding audio fade in effect"
             }
 
-    @mcp.tool(description="Use this tool for audio fade out effect, provide fade_duration in seconds, and output name like fadeout_audio.mp3, if there are multiple steps to be done after adding fade out then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for audio fade out effect, provide fade_duration in seconds, and output name like fadeout_audio.mp3, if there are multiple steps to be done after adding fade out then make sure to return object and return path should be false else return path should be true")
     def fadeout_audio(audio_path:str, fade_duration:float, output_name:str, return_path:bool) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)
@@ -276,7 +276,7 @@ def register_audio_tools(mcp):
                 "message": "Error adding audio fade out effect"
             }
 
-    @mcp.tool(description="Use this tool for mixing multiple audio tracks together, provide list of audio paths and output name, if there are multiple steps to be done after mixing audio tracks then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for mixing multiple audio tracks together, provide list of audio paths and output name, if there are multiple steps to be done after mixing audio tracks then make sure to return object and return path should be false else return path should be true")
     def mix_audio_tracks(audio_paths:List[str], output_name:str, return_path:bool) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)

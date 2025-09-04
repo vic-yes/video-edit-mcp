@@ -19,7 +19,6 @@ import logging
 import imageio
 from .utils import get_output_path, VideoStore, AudioStore
 import moviepy.config as mpy_conf
-from PIL import Image, ImageDraw, ImageFont
 
 
 logger = logging.getLogger(__name__)
@@ -123,7 +122,7 @@ def register_video_tools(mcp):
             except:
                 pass
 
-    @mcp.tool(description="Use this tool for trimming the video, provide start and end time in seconds, and output name like trimmed_video.mp4 , if there are multiple steps to be done after trimming then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for trimming the video, provide start and end time in seconds, and output name like trimmed_video.mp4 , if there are multiple steps to be done after trimming then make sure to return object and return path should be false else return path should be true")
     def trim_video(video_path: str, start_time: float, end_time: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -255,7 +254,7 @@ def register_video_tools(mcp):
             # 释放视频捕获对象
             cap.release()
 
-    @mcp.tool(description="Use this tool for cropping the video, provide x1, y1, x2, y2 coordinates, and output name like cropped_video.mp4 , if there are multiple steps to be done after cropping then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for cropping the video, provide x1, y1, x2, y2 coordinates, and output name like cropped_video.mp4 , if there are multiple steps to be done after cropping then make sure to return object and return path should be false else return path should be true")
     def crop_video(video_path: str, x1: int, y1: int, x2: int, y2: int, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -292,7 +291,7 @@ def register_video_tools(mcp):
                 "message": "Error cropping video"
             }
 
-    @mcp.tool(description="Use this tool for rotating the video, and make sure to provide output name like rotated_video.mp4 , some_hello.mp4 etc. don't pass path just give meaningful names based on video info, if there are multiple steps to be done after rotating then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for rotating the video, and make sure to provide output name like rotated_video.mp4 , some_hello.mp4 etc. don't pass path just give meaningful names based on video info, if there are multiple steps to be done after rotating then make sure to return object and return path should be false else return path should be true")
     def rotate_video(video_path: str, angle: int, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -329,7 +328,7 @@ def register_video_tools(mcp):
                 "message": "Error rotating video"
             }
 
-    @mcp.tool(description="Use this tool for speed up the video, and make sure to provide output name like speed_up_video.mp4 , some_hello.mp4 etc. don't pass path just give meaningful names based on video info, if there are multiple steps to be done after speed up then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for speed up the video, and make sure to provide output name like speed_up_video.mp4 , some_hello.mp4 etc. don't pass path just give meaningful names based on video info, if there are multiple steps to be done after speed up then make sure to return object and return path should be false else return path should be true")
     def speed_up_video(video_path: str, speed: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -366,7 +365,7 @@ def register_video_tools(mcp):
                 "message": "Error changing video speed"
             }
 
-    @mcp.tool(description="Use this tool for adding audio to the video , and make sure to provide output file name like added_audio.mp4 etc. make sure mp4 extension is provided and name should be meaningful, if there are multiple steps to be done after adding audio then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for adding audio to the video , and make sure to provide output file name like added_audio.mp4 etc. make sure mp4 extension is provided and name should be meaningful, if there are multiple steps to be done after adding audio then make sure to return object and return path should be false else return path should be true")
     def add_audio(video_path: str, audio_path: str, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             output_path = get_output_path(output_name)
@@ -396,7 +395,7 @@ def register_video_tools(mcp):
                 "message": "Error adding audio to video"
             }
 
-    @mcp.tool(description="Use this tool for adding fade in effect to video, provide fade_duration in seconds, and output name like fadein_video.mp4, if there are multiple steps to be done after adding fade in then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for adding fade in effect to video, provide fade_duration in seconds, and output name like fadein_video.mp4, if there are multiple steps to be done after adding fade in then make sure to return object and return path should be false else return path should be true")
     def fadein_video(video_path: str, fade_duration: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -433,7 +432,7 @@ def register_video_tools(mcp):
                 "message": "Error adding fade in effect"
             }
 
-    @mcp.tool(description="Use this tool for adding fade out effect to video, provide fade_duration in seconds, and output name like fadeout_video.mp4, if there are multiple steps to be done after adding fade out then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for adding fade out effect to video, provide fade_duration in seconds, and output name like fadeout_video.mp4, if there are multiple steps to be done after adding fade out then make sure to return object and return path should be false else return path should be true")
     def fadeout_video(video_path: str, fade_duration: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -494,7 +493,7 @@ def register_video_tools(mcp):
             texts: List of text contents to overlay sequentially
             output_path: Path of the output video file
             font_size: Font size in pixels (40, 60, 80, 100)
-            font_language: Font language code. Must match the language of texts. Supported values: 'en' (English), 'zh' (Chinese)
+            font_language: Font language code. Must match the language of texts. Supported values: 'en' (English), 'cn' (Chinese)
             random_movement: Whether to enable random bouncing movement
             speed: Speed of random movement in pixels per second
             opacity: Text opacity (0.0 transparent to 1.0 opaque)
@@ -677,7 +676,7 @@ def register_video_tools(mcp):
         
         return position_func
 
-    @mcp.tool(description="Use this tool for adding image watermark/overlay to video, provide image_path, position coordinates (x,y), and output name, if there are multiple steps to be done after adding image overlay then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for adding image watermark/overlay to video, provide image_path, position coordinates (x,y), and output name, if there are multiple steps to be done after adding image overlay then make sure to return object and return path should be false else return path should be true")
     def add_image_overlay(video_path: str, image_path: str, x: int, y: int, duration: float, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             # Input validation
@@ -715,7 +714,7 @@ def register_video_tools(mcp):
                 "message": "Error adding image overlay"
             }
 
-    @mcp.tool(description="Use this tool for converting video to grayscale/black and white, provide output name like grayscale_video.mp4, if there are multiple steps to be done after converting to grayscale then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for converting video to grayscale/black and white, provide output name like grayscale_video.mp4, if there are multiple steps to be done after converting to grayscale then make sure to return object and return path should be false else return path should be true")
     def grayscale_video(video_path: str, output_name: str, return_path: bool) -> Dict[str, Any]:
         try:
             output_path = get_output_path(output_name)
@@ -744,7 +743,7 @@ def register_video_tools(mcp):
                 "message": "Error converting video to grayscale"
             }
 
-    @mcp.tool(description="Use this tool for extracting frames from video as images, provide start_time, end_time, and fps for extraction, if there are multiple steps to be done after extracting frames then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for extracting frames from video as images, provide start_time, end_time, and fps for extraction, if there are multiple steps to be done after extracting frames then make sure to return object and return path should be false else return path should be true")
     def extract_frames(video_path:str, start_time:float, end_time:float, fps:int, output_folder_name:str, return_path:bool) -> Dict[str,Any]:
         try:
             video = VideoStore.load(video_path)
@@ -775,7 +774,7 @@ def register_video_tools(mcp):
                 "message": "Error extracting frames from video"
             }
 
-    @mcp.tool(description="Use this tool for mirroring video horizontally, provide output name like mirrored_video.mp4, if there are multiple steps to be done after mirroring then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for mirroring video horizontally, provide output name like mirrored_video.mp4, if there are multiple steps to be done after mirroring then make sure to return object and return path should be false else return path should be true")
     def mirror_video(video_path:str, output_name:str, return_path:bool) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)
@@ -803,7 +802,7 @@ def register_video_tools(mcp):
                 "message": "Error mirroring video"
             }
 
-    @mcp.tool(description="Use this tool for splitting video into multiple parts at specific timestamps, provide list of split times in seconds, if there are multiple steps to be done after splitting then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for splitting video into multiple parts at specific timestamps, provide list of split times in seconds, if there are multiple steps to be done after splitting then make sure to return object and return path should be false else return path should be true")
     def split_video_at_times(video_path:str, split_times:List[float], output_name:str, return_path:bool) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)
@@ -843,7 +842,7 @@ def register_video_tools(mcp):
                 "message": "Error splitting video at times"
             }
 
-    @mcp.tool(description="Use this tool for converting video format with codec and quality control, provide codec, fps, bitrate, if there are multiple steps to be done after converting video format then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for converting video format with codec and quality control, provide codec, fps, bitrate, if there are multiple steps to be done after converting video format then make sure to return object and return path should be false else return path should be true")
     def convert_video_format(video_path:str, output_name:str, codec:str, fps:Optional[int], bitrate:Optional[str], return_path:bool) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)
@@ -876,7 +875,7 @@ def register_video_tools(mcp):
                 "message": "Error converting video format"
             }
 
-    @mcp.tool(description="Use this tool for adding video overlay with transparency, provide overlay video, position, and opacity (0-1), if there are multiple steps to be done after adding video overlay then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for adding video overlay with transparency, provide overlay video, position, and opacity (0-1), if there are multiple steps to be done after adding video overlay then make sure to return object and return path should be false else return path should be true")
     def add_video_overlay(base_video_path:str, overlay_video_path:str, x:int, y:int, opacity:float, output_name:str, return_path:bool,duration:float) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)

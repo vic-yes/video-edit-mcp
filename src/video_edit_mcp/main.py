@@ -15,7 +15,7 @@ mcp = FastMCP("VideoEdit")
 register_image_tools(mcp)
 register_video_tools(mcp)
 register_audio_tools(mcp)
-register_download_and_utility_tools(mcp)
+#register_download_and_utility_tools(mcp)
 register_util_tools(mcp)
 
 def main():
