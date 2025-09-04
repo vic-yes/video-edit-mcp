@@ -473,182 +473,10 @@ def register_video_tools(mcp):
     @mcp.tool()
     def add_text_overlay(
         video_path: str,
-        text: str,
-        x: int,
-        y: int,
-        font_size: int,
-        color: str,
-        output_path: str,
-        return_path: bool = True,
-        # 随机运动参数
-        random_movement: bool = False,
-        speed: float = 80,
-        # 透明度效果参数
-        opacity: Optional[float] = 1.0,
-        fade_in: Optional[float] = 0.0,
-        fade_out: Optional[float] = 0.0,
-        # 字体参数
-        font_language: str = "en",
-    ) -> Dict[str, Any]:
-        """
-        Add text overlay to video with dynamic movement and opacity effects.
-        
-        Args:
-            video_path: Path to the input video
-            text: Text content to overlay
-            font_language: Determines which custom font file to use based on language (en, cn)
-            x: Horizontal position of the text
-            y: Vertical position of the text
-            font_size: Font size in pixels (40, 60, 80, 100)
-            color: Text color (white, gold, LightGoldenrodYellow, LemonChiffon, PeachPuff, coral, bisque, BlanchedAlmond, MistyRose, honeydew, PaleTurquoise)
-            output_path: Path of the output video file
-            return_path: Whether to return file path or object reference
-            random_movement: Whether to enable random bouncing movement
-            speed: Speed of random movement in pixels per second
-            opacity: Text opacity (0.0 transparent to 1.0 opaque)
-            fade_in: Fade-in duration in seconds
-            fade_out: Fade-out duration in seconds
-        
-        Returns:
-            Dictionary with success status and output path or object reference
-        """
-        try:
-            # Input validation
-            if not text or not text.strip():
-                return {
-                    "success": False,
-                    "error": "Text cannot be empty",
-                    "message": "Invalid text parameter"
-                }
-            if font_size <= 0:
-                return {
-                    "success": False,
-                    "error": "Font size must be positive",
-                    "message": "Invalid font size parameter"
-                }
-            if opacity is not None and (opacity < 0 or opacity > 1):
-                return {
-                    "success": False,
-                    "error": "Opacity must be between 0.0 and 1.0",
-                    "message": "Invalid opacity parameter"
-                }
-            
-            video = VideoStore.load(video_path)
-
-            font = "fonts/Smile-EN.otf"
-            if font_language == 'cn':
-                font = "fonts/Smile-CN.otf"
-            
-            text_clip = TextClip(txt=text, fontsize=font_size, color=color, font=font)
-            text_clip = text_clip.set_duration(video.duration)
-            
-            if opacity < 1.0:
-                text_clip = text_clip.set_opacity(opacity)
-            
-            if fade_in > 0:
-                text_clip = text_clip.fadein(duration=fade_in)
-            if fade_out > 0:
-                text_clip = text_clip.fadeout(duration=fade_out)
-            
-            # 设置动态移动效果
-            if random_movement:
-                # 获取视频尺寸
-                video_width, video_height = video.size
-                
-                # 获取文本尺寸（近似）
-                text_width = len(text) * font_size * 0.6  # 近似计算文本宽度
-                text_height = font_size
-                
-                # 随机初始速度方向
-                angle = random.uniform(0, 2 * math.pi)
-                velocity_x = speed * math.cos(angle)
-                velocity_y = speed * math.sin(angle)
-                
-                # 当前位置
-                current_x = x
-                current_y = y
-                
-                def bouncing_position_func(t):
-                    nonlocal current_x, current_y, velocity_x, velocity_y
-                    
-                    # 计算时间增量（假设函数被频繁调用，使用小的时间步长）
-                    dt = 0.1  # 时间步长
-                    
-                    # 更新位置
-                    new_x = current_x + velocity_x * dt
-                    new_y = current_y + velocity_y * dt
-                    
-                    # 边界检测和反弹
-                    bounced = False
-                    
-                    # 左右边界检测
-                    if new_x < 0:
-                        new_x = 0
-                        velocity_x = -velocity_x
-                        bounced = True
-                    elif new_x + text_width > video_width:
-                        new_x = video_width - text_width
-                        velocity_x = -velocity_x
-                        bounced = True
-                    
-                    # 上下边界检测
-                    if new_y < 0:
-                        new_y = 0
-                        velocity_y = -velocity_y
-                        bounced = True
-                    elif new_y + text_height > video_height:
-                        new_y = video_height - text_height
-                        velocity_y = -velocity_y
-                        bounced = True
-                    
-                    # 更新当前位置
-                    current_x, current_y = new_x, new_y
-                    
-                    return (int(current_x), int(current_y))
-                
-                text_clip = text_clip.set_position(bouncing_position_func)
-            else:
-                # 静态位置
-                text_clip = text_clip.set_position((x, y))
-            
-            # 叠加文本到视频
-            final_video = CompositeVideoClip([video, text_clip])
-            
-            if return_path:
-                final_video.write_videofile(
-                    output_path,
-                    fps=final_video.fps,
-                    codec='libx264',
-                    audio_codec='aac')
-                return {
-                    "success": True,
-                    "output_path": output_path,
-                    "message": "Text overlay with dynamic effects added successfully"
-                }
-            else:
-                ref = VideoStore.store(final_video)
-                return {
-                    "success": True,
-                    "output_object": ref,
-                    "message": "Text overlay with dynamic effects added successfully"
-                }
-    
-        except Exception as e:
-            logger.error(f"Error adding text overlay to video {video_path}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "error_type": type(e).__name__,
-                "message": "Error adding text overlay."
-            }
-
-    @mcp.tool()
-    def add_multiple_texts_overlay(
-        video_path: str,
         texts: List[str],
-        font_size: int,
         output_path: str,
-        return_path: bool = True,
+        font_size: int,
+        font_language: str = "cn",
         # 随机运动参数
         random_movement: bool = False,
         speed: float = 80,
@@ -656,8 +484,7 @@ def register_video_tools(mcp):
         opacity: Optional[float] = 1.0,
         fade_in: Optional[float] = 0.0,
         fade_out: Optional[float] = 0.0,
-        # 字体参数
-        font_language: str = "en"
+        return_path: bool = True,
     ) -> Dict[str, Any]:
         """
         Add multiple text overlays to video with sequential appearance, random colors and positions.
@@ -665,15 +492,15 @@ def register_video_tools(mcp):
         Args:
             video_path: Path to the input video
             texts: List of text contents to overlay sequentially
-            font_language: Determines which custom font file to use based on language (en, cn)
-            font_size: Font size in pixels (40, 60, 80, 100)
             output_path: Path of the output video file
-            return_path: Whether to return file path or object reference
+            font_size: Font size in pixels (40, 60, 80, 100)
+            font_language: Font language code. Must match the language of texts. Supported values: 'en' (English), 'zh' (Chinese)
             random_movement: Whether to enable random bouncing movement
             speed: Speed of random movement in pixels per second
             opacity: Text opacity (0.0 transparent to 1.0 opaque)
             fade_in: Fade-in duration in seconds
             fade_out: Fade-out duration in seconds
+            return_path: Whether to return file path or object reference
             
         Returns:
             Dictionary with success status and output path or object reference
@@ -733,17 +560,13 @@ def register_video_tools(mcp):
                 # 随机选择颜色
                 color = random.choice(colors)
                 
-                # 计算文本的开始和结束时间
-                start_time = i * (each_text_duration + 2)
-                end_time = start_time + each_text_duration
+                # 创建文本剪辑
+                text_clip = TextClip(txt=text, fontsize=font_size, color=color, font=font)
                 
-                # 创建文本剪辑并设置持续时间
-                text_clip = TextClip(
-                    txt=text, 
-                    fontsize=font_size, 
-                    color=color, 
-                    font=font
-                ).set_duration(each_text_duration).set_start(start_time)
+                # 设置文本的出现时间
+                start_time = i * (each_text_duration + 2)  # 每个文本间隔2秒
+                end_time = start_time + each_text_duration
+                text_clip = text_clip.set_start(start_time).set_end(end_time)
                 
                 # 设置透明度效果
                 if opacity < 1.0:
@@ -769,73 +592,16 @@ def register_video_tools(mcp):
                 
                 # 设置动态移动效果或静态位置
                 if random_movement:
-                    # 为每个文本创建独立的运动状态
-                    def create_movement_function(initial_x, initial_y, text_w, text_h, vid_w, vid_h, spd, start_t, end_t):
-                        # 随机初始速度方向
-                        angle = random.uniform(0, 2 * math.pi)
-                        velocity_x = spd * math.cos(angle)
-                        velocity_y = spd * math.sin(angle)
-                        
-                        # 初始位置
-                        current_x = initial_x
-                        current_y = initial_y
-                        last_time = start_t
-                        
-                        def position_func(t):
-                            nonlocal current_x, current_y, velocity_x, velocity_y, last_time
-                            
-                            # 只在文本显示时间内计算位置
-                            if t < start_t or t > end_t:
-                                return (int(current_x), int(current_y))
-                            
-                            # 计算时间增量（使用全局时间）
-                            dt = t - last_time
-                            if dt <= 0:
-                                return (int(current_x), int(current_y))
-                            
-                            last_time = t
-                            
-                            # 更新位置
-                            new_x = current_x + velocity_x * dt
-                            new_y = current_y + velocity_y * dt
-                            
-                            # 边界检测和反弹
-                            bounced = False
-                            
-                            # 左右边界检测
-                            if new_x < 0:
-                                new_x = 0
-                                velocity_x = -velocity_x
-                                bounced = True
-                            elif new_x + text_w > vid_w:
-                                new_x = vid_w - text_w
-                                velocity_x = -velocity_x
-                                bounced = True
-                            
-                            # 上下边界检测
-                            if new_y < 0:
-                                new_y = 0
-                                velocity_y = -velocity_y
-                                bounced = True
-                            elif new_y + text_h > vid_h:
-                                new_y = vid_h - text_h
-                                velocity_y = -velocity_y
-                                bounced = True
-                            
-                            # 更新当前位置
-                            current_x, current_y = new_x, new_y
-                            
-                            return (int(current_x), int(current_y))
-                        
-                        return position_func
-                    
-                    # 创建运动函数
-                    movement_func = create_movement_function(
-                        random_x, random_y, text_width, text_height, 
-                        video_width, video_height, speed, start_time, end_time
+                    # 随机初始速度方向
+                    angle = random.uniform(0, 2 * math.pi)
+                    velocity_x = speed * math.cos(angle)
+                    velocity_y = speed * math.sin(angle)
+
+                    position_func = create_text_bouncing_position(
+                        (random_x, random_y), (velocity_x, velocity_y),
+                        text_width, text_height, video_width, video_height
                     )
-                    
-                    text_clip = text_clip.set_position(movement_func)
+                    text_clip = text_clip.set_position(position_func)
                 else:
                     # 静态随机位置
                     text_clip = text_clip.set_position((random_x, random_y))
@@ -872,6 +638,44 @@ def register_video_tools(mcp):
                 "error_type": type(e).__name__,
                 "message": "Error adding text overlays."
             }
+
+    def create_text_bouncing_position(
+            current_position, velocity, text_width, text_height, video_width, video_height):
+        # 使用局部变量存储状态
+        current_x, current_y = current_position
+        velocity_x, velocity_y = velocity
+        
+        def position_func(t):
+            nonlocal current_x, current_y, velocity_x, velocity_y
+            
+            # 计算时间增量
+            dt = 0.1
+            
+            # 更新位置
+            new_x = current_x + velocity_x * dt
+            new_y = current_y + velocity_y * dt
+            
+            # 边界检测和反弹
+            if new_x < 0:
+                new_x = 0
+                velocity_x = -velocity_x
+            elif new_x + text_width > video_width:
+                new_x = video_width - text_width
+                velocity_x = -velocity_x
+            
+            if new_y < 0:
+                new_y = 0
+                velocity_y = -velocity_y
+            elif new_y + text_height > video_height:
+                new_y = video_height - text_height
+                velocity_y = -velocity_y
+            
+            # 更新当前位置
+            current_x, current_y = new_x, new_y
+            
+            return (int(current_x), int(current_y))
+        
+        return position_func
 
     @mcp.tool(description="Use this tool for adding image watermark/overlay to video, provide image_path, position coordinates (x,y), and output name, if there are multiple steps to be done after adding image overlay then make sure to return object and return path should be false else return path should be true")
     def add_image_overlay(video_path: str, image_path: str, x: int, y: int, duration: float, output_name: str, return_path: bool) -> Dict[str, Any]:
