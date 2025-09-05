@@ -482,8 +482,7 @@ def register_video_tools(mcp):
         # 透明度效果参数
         opacity: Optional[float] = 1.0,
         fade_in: Optional[float] = 0.0,
-        fade_out: Optional[float] = 0.0,
-        return_path: bool = True,
+        fade_out: Optional[float] = 0.0
     ) -> Dict[str, Any]:
         """
         Add multiple text overlays to video with sequential appearance, random colors and positions.
@@ -499,12 +498,13 @@ def register_video_tools(mcp):
             opacity: Text opacity (0.0 transparent to 1.0 opaque)
             fade_in: Fade-in duration in seconds
             fade_out: Fade-out duration in seconds
-            return_path: Whether to return file path or object reference
             
         Returns:
             Dictionary with success status and output path or object reference
         """
         try:
+            return_path = True
+
             # 默认颜色列表
             colors = ["white", "gold", "LightGoldenrodYellow", "LemonChiffon", 
                      "PeachPuff", "coral", "bisque", "BlanchedAlmond", 
@@ -578,8 +578,7 @@ def register_video_tools(mcp):
                     text_clip = text_clip.fadeout(duration=fade_out)
                 
                 # 生成随机位置
-                text_width = len(text) * font_size * 0.6  # 近似计算文本宽度
-                text_height = font_size
+                text_width, text_height = text_clip.size
                 
                 # 确保文本不会超出屏幕边界
                 max_x = max(0, video_width - text_width)
@@ -912,8 +911,7 @@ def register_video_tools(mcp):
         video_paths: List[str],
         audios_folder: str,
         output_path: str, 
-        transition_duration: float = 1.0,
-        return_path: bool = True
+        transition_duration: float = 1.0
     ) -> Dict[str, Any]:
         """
         Use this tool for merging multiple videos, provide multiple video paths, and output path like /path/merged_video.mp4 , if there are multiple steps to be done after merging then make sure to return object and return path should be false else return path should be true
@@ -923,12 +921,13 @@ def register_video_tools(mcp):
             audios_folder: Folder containing audio files to choose from
             output_path: Output file path
             transition_duration: Transition duration in seconds
-            return_path: Whether to return file path (True) or video object (False)
         
         Returns:
             Dictionary with success status and output path or object reference
         """
         try:
+            return_path = True
+
             # Validate input
             if not video_paths or len(video_paths) < 1:
                 return {

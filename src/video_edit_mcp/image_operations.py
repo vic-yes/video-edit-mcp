@@ -224,7 +224,6 @@ def register_image_tools(mcp):
         output_path: str,
         duration: float = 5.0,
         fps: int = 24,
-        return_path: bool = True,
         # 滤镜特效参数
         effect: Optional[str] = None,
         # 缩放移动参数
@@ -247,7 +246,6 @@ def register_image_tools(mcp):
             output_path: Path to the output video filename
             duration: Duration of the output video in seconds
             fps: Frames per second for the output video
-            return_path: Whether to return file path or object reference
             effect: Special effect to apply ('blackwhite', 'sepia', 'blur', 'edge_detect', 'invert', 'sharpen', 'emboss', 'sketch')
             zoom_factor: Zoom factor (e.g., 1.5 for 1.5x zoom)
             zoom_direction: Direction for zoom effect ('center', 'top', 'left', 'right', 'bottom')
@@ -277,6 +275,8 @@ def register_image_tools(mcp):
                     "message": "Invalid FPS parameter"
                 }
             
+            return_path = True
+
             # Load the image
             image_clip = ImageClip(image_path).set_duration(duration)
             
@@ -521,7 +521,7 @@ def register_image_tools(mcp):
         # Apply the transformation
         return clip.fl(transform, apply_to=['mask', 'audio'] if clip.audio else None)
 
-    @mcp.tool(description="Use this tool for creating video from image sequence, provide folder path with images, fps, and output name, if there are multiple steps to be done after creating video from images then make sure to return object and return path should be false else return path should be true")
+    #@mcp.tool(description="Use this tool for creating video from image sequence, provide folder path with images, fps, and output name, if there are multiple steps to be done after creating video from images then make sure to return object and return path should be false else return path should be true")
     def images_to_video(images_folder_path:str, fps:int, output_name:str, return_path:bool) -> Dict[str,Any]:
         try:
             output_path = get_output_path(output_name)

@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from moviepy.editor import VideoFileClip, AudioFileClip
 import os
+import shutil
 import logging
 from .utils import VideoStore, AudioStore
 
@@ -102,3 +103,30 @@ def register_util_tools(mcp):
                 "error": str(e),
                 "message": "Error creating directory"
             } 
+        
+    @mcp.tool(description="Use this tool to remove a directory and all its contents, provide directory path")
+    def remove_directory(directory_path: str) -> Dict[str, Any]:
+        try:
+            # 检查是否是目录
+            if not os.path.isdir(directory_path):
+                return {
+                    "success": False,
+                    "error": "Path is not a directory",
+                    "message": "Provide a directory path, not a file"
+                }
+            
+            # 使用shutil.rmtree递归删除目录及其所有内容
+            if os.path.exists(directory_path):
+                shutil.rmtree(directory_path)
+            
+            return {
+                "success": True,
+                "message": f"Directory '{directory_path}' removed successfully"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "Error removing directory"
+            }
