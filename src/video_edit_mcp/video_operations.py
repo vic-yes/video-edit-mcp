@@ -18,7 +18,6 @@ import os
 import logging
 import imageio
 from .utils import get_output_path, VideoStore, AudioStore
-import moviepy.config as mpy_conf
 
 
 logger = logging.getLogger(__name__)

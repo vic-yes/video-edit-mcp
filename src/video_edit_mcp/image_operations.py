@@ -7,8 +7,8 @@ from .editorpy.editor import *
 from moviepy.editor import *
 from moviepy.video.fx import *
 from PIL import Image
-from .utils import get_output_path, VideoStore, AudioStore
-from typing import Dict, Any, Optional, List, Tuple
+from .utils import get_output_path, VideoStore
+from typing import Dict, Any, Optional, Tuple
 from moviepy.editor import ImageClip, ImageSequenceClip
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def register_image_tools(mcp):
                     "n_frames": getattr(img, "n_frames", 1),
                 }
                 
-                # Get EXIF data if available - 修复编码问题
+                # Get EXIF data if available
                 exif_data = {}
                 try:
                     with open(image_path, 'rb') as f:

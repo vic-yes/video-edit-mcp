@@ -9,7 +9,7 @@ from .util_tools import register_util_tools
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("VideoEdit")
+mcp = FastMCP("VideoEdit", host="0.0.0.0", port=9000)
 
 # Register all tools from different modules
 register_image_tools(mcp)
@@ -20,7 +20,7 @@ register_util_tools(mcp)
 
 def main():
     """Entry point for the MCP server"""
-    mcp.run(transport="streamable-http", mount_path="/mcp")
+    mcp.run(transport="streamable-http")
 
 if __name__ == "__main__":
     main()
